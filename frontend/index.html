@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AegisFlow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f4ee;
+    --ink:#17181c;
+    --ink-soft:#4a4d57;
+    --ink-faint:#9a9ca6;
+    --line:#d9d5c9;
+    --line-soft:#e7e3d7;
+    --card:#fcfbf7;
+    --amber:#b5661f;
+    --amber-bg:#f5e6d3;
+    --green:#2f6e4f;
+    --green-bg:#dfeee4;
+    --red:#a63838;
+    --red-bg:#f5dedb;
+    --disp: 'Space Grotesk', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --body: 'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); padding:0 0 80px;
+  }
+  .wrap{max-width:1220px; margin:0 auto; padding:0 40px;}
+
+  /* ── Masthead ───────────────────────────── */
+  .masthead{
+    border-bottom:3px solid var(--ink); padding:28px 0 18px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .masthead-left{display:flex; align-items:baseline; gap:16px;}
+  .wordmark{
+    font-family:var(--disp); font-weight:700; font-size:30px; letter-spacing:-0.5px;
+  }
+  .wordmark em{font-style:normal; color:var(--amber);}
+  .tagline{
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    text-transform:uppercase; letter-spacing:1px;
+  }
+  .masthead-right{
+    font-family:var(--mono); font-size:11px; color:var(--ink-soft); text-align:right;
+  }
+  .live-flag{
+    display:inline-flex; align-items:center; gap:6px; margin-bottom:3px;
+  }
+  .live-dot{
+    width:6px; height:6px; background:var(--green); border-radius:50%;
+    animation:blink 1.8s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  .pipeline-strip{
+    font-family:var(--mono); font-size:11px; color:var(--ink-soft);
+    padding:12px 0; border-bottom:1px solid var(--line); letter-spacing:0.3px;
+    display:flex; gap:6px; flex-wrap:wrap;
+  }
+  .pipeline-strip .seg{color:var(--ink);}
+  .pipeline-strip .sep{color:var(--ink-faint);}
+
+  /* ── Task control ───────────────────────── */
+  .task-row{
+    display:flex; gap:0; margin:24px 0 32px; border:2px solid var(--ink);
+  }
+  .task-row input{
+    flex:1; background:var(--card); border:none; color:var(--ink);
+    padding:14px 16px; font-size:14px; font-family:var(--body); outline:none;
+  }
+  .task-row button{
+    font-family:var(--mono); font-weight:600; font-size:12px; letter-spacing:0.5px;
+    text-transform:uppercase; cursor:pointer; border:none; padding:0 24px;
+    background:var(--ink); color:var(--paper);
+    border-left:2px solid var(--ink);
+  }
+  .task-row button:hover{background:var(--amber);}
+  .task-row button:disabled{background:var(--ink-faint); cursor:not-allowed;}
+  .reset-link{
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    background:none; border:none; cursor:pointer; text-decoration:underline;
+    padding:0; margin-top:8px; display:inline-block;
+  }
+  .reset-link:hover{color:var(--ink);}
+
+  /* ── Section labels ─────────────────────── */
+  .section-label{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:1.2px; color:var(--ink-faint);
+    display:flex; justify-content:space-between; align-items:center;
+    padding-bottom:8px; margin-bottom:14px; border-bottom:1px solid var(--line);
+  }
+
+  /* ── Layout ─────────────────────────────── */
+  .layout{display:grid; grid-template-columns: 1.3fr 1fr; gap:44px;}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
+
+  /* ── Trace steps ────────────────────────── */
+  .step{
+    border-left:3px solid var(--ink-faint); padding:14px 0 14px 18px; margin-bottom:2px;
+    opacity:0; animation:reveal 0.35s ease forwards;
+  }
+  .step + .step{border-top:1px solid var(--line-soft);}
+  @keyframes reveal{ from{opacity:0; transform:translateX(-4px);} to{opacity:1; transform:translateX(0);} }
+  .step.low{border-left-color:var(--green);}
+  .step.medium{border-left-color:var(--amber);}
+  .step.high{border-left-color:var(--red);}
+
+  .step-head{display:flex; align-items:baseline; gap:10px; margin-bottom:8px; flex-wrap:wrap;}
+  .step-num{font-family:var(--mono); font-size:11px; color:var(--ink-faint);}
+  .step-name{font-family:var(--disp); font-weight:600; font-size:15px;}
+  .step-target{font-family:var(--body); color:var(--ink-soft); font-size:14px;}
+
+  .tier-tag{
+    font-family:var(--mono); font-size:10px; font-weight:600; padding:2px 8px;
+    text-transform:uppercase; letter-spacing:0.5px; border:1px solid currentColor;
+  }
+  .tier-tag.low{color:var(--green); background:var(--green-bg);}
+  .tier-tag.medium{color:var(--amber); background:var(--amber-bg);}
+  .tier-tag.high{color:var(--red); background:var(--red-bg);}
+
+  .trace-line{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); padding:2px 0;
+    display:flex; gap:8px;
+  }
+  .trace-line .k{color:var(--ink-faint); min-width:64px;}
+  .trace-line .ok{color:var(--green); font-weight:600;}
+  .trace-line .blocked{color:var(--red); font-weight:600;}
+  .trace-line .mismatch{color:var(--red); font-weight:700;}
+  .trace-line .verified{color:var(--green); font-weight:600;}
+
+  .note{
+    font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6; max-width:520px;
+  }
+  .note.warn{
+    color:var(--red); background:var(--red-bg); padding:8px 12px; border-left:2px solid var(--red);
+  }
+
+  .placeholder{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+    padding:50px 0; text-align:center; border:1px dashed var(--line);
+  }
+
+  /* ── Invoice ledger ─────────────────────── */
+  .ledger{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .ledger th{
+    text-align:left; font-family:var(--mono); font-size:10px; text-transform:uppercase;
+    letter-spacing:0.5px; color:var(--ink-faint); padding:0 4px 8px; font-weight:500;
+    border-bottom:1px solid var(--line);
+  }
+  .ledger td{padding:9px 4px; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
+  .ledger tr:last-child td{border-bottom:none;}
+  .ledger .name{font-family:var(--body); font-weight:500;}
+  .ledger .amt{font-family:var(--mono); color:var(--ink-soft); text-align:right;}
+  .flag{
+    font-family:var(--mono); font-size:9.5px; font-weight:600; padding:1px 7px;
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+  .flag.yes{color:var(--green); background:var(--green-bg);}
+  .flag.no{color:var(--ink-faint); border:1px solid var(--line);}
+
+  /* ── Audit ledger ───────────────────────── */
+  .audit-entry{
+    font-family:var(--mono); font-size:11px; color:var(--ink-soft);
+    padding:9px 0; border-bottom:1px solid var(--line-soft); line-height:1.6;
+  }
+  .audit-entry:last-child{border-bottom:none;}
+  .audit-entry .ts{color:var(--ink-faint);}
+  .audit-entry b{color:var(--ink);}
+  .audit-tag{
+    font-size:9.5px; font-weight:700; padding:1px 6px; margin-left:4px; text-transform:uppercase;
+  }
+  .audit-tag.mismatch{color:var(--red); background:var(--red-bg);}
+  .audit-tag.verified{color:var(--green); background:var(--green-bg);}
+  .audit-tag.blocked{color:var(--red); background:var(--red-bg);}
+
+  .panel-gap{margin-top:36px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-left">
+      <div class="wordmark">Aegis<em>Flow</em></div>
+      <div class="tagline">Trust layer for AI agents</div>
+    </div>
+    <div class="masthead-right">
+      <div class="live-flag"><span class="live-dot"></span> LIVE PIPELINE</div>
+      <div>Round 1 — Reference build</div>
+    </div>
+  </div>
+
+  <div class="pipeline-strip">
+    <span class="seg">Intent</span><span class="sep">→</span>
+    <span class="seg">Planner</span><span class="sep">→</span>
+    <span class="seg">Policy Engine</span><span class="sep">→</span>
+    <span class="seg">Tool Gateway</span><span class="sep">→</span>
+    <span class="seg">Verification</span><span class="sep">→</span>
+    <span class="seg">Audit Log</span>
+  </div>
+
+  <div class="task-row">
+    <input id="taskInput" value="Chase all overdue invoices and waive fees where reasonable" />
+    <button onclick="runPipeline()" id="runBtn">Run</button>
+  </div>
+  <button class="reset-link" onclick="resetDemo()" style="margin-top:-24px; margin-bottom:24px;">reset demo data</button>
+
+  <div class="layout">
+    <div>
+      <div class="section-label">
+        <span>Execution Trace</span>
+        <span id="traceCount">0 steps</span>
+      </div>
+      <div id="trace">
+        <div class="placeholder">awaiting run — press "Run" to evaluate the agent's plan</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">
+        <span>System of Record</span>
+        <span id="invCount">0 invoices</span>
+      </div>
+      <table class="ledger" id="invoiceTable"><tbody></tbody></table>
+
+      <div class="panel-gap">
+        <div class="section-label">
+          <span>Audit Log</span>
+          <span id="auditCount">0 entries</span>
+        </div>
+        <div id="auditLog">
+          <div class="placeholder" style="padding:24px 0;">no entries yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "";
+
+async function loadInvoices(){
+  const res = await fetch(API + "/api/invoices");
+  const rows = await res.json();
+  document.getElementById("invCount").textContent = rows.length + " invoices";
+  const tbody = document.querySelector("#invoiceTable tbody");
+  tbody.innerHTML = "<tr><th>Customer</th><th>Amount</th><th>Reminder</th><th>Fee</th></tr>" +
+    rows.map(function(r){
+      return "<tr>" +
+        "<td class=\"name\">" + r.customer_name + "</td>" +
+        "<td class=\"amt\">Rs " + r.amount.toLocaleString() + "</td>" +
+        "<td>" + (r.reminder_sent ? "<span class=\"flag yes\">Sent</span>" : "<span class=\"flag no\">—</span>") + "</td>" +
+        "<td>" + (r.fee_waived ? "<span class=\"flag yes\">Waived</span>" : "<span class=\"flag no\">—</span>") + "</td>" +
+      "</tr>";
+    }).join("");
+}
+
+async function loadAuditLog(){
+  const res = await fetch(API + "/api/audit-log");
+  const rows = await res.json();
+  document.getElementById("auditCount").textContent = rows.length + " entries";
+  const el = document.getElementById("auditLog");
+  if(rows.length === 0){
+    el.innerHTML = "<div class=\"placeholder\" style=\"padding:24px 0;\">no entries yet</div>";
+    return;
+  }
+  el.innerHTML = rows.slice(0,12).map(function(r){
+    var tag = "";
+    if(r.verification_status === "mismatch") tag = "<span class=\"audit-tag mismatch\">mismatch</span>";
+    else if(r.verification_status === "verified") tag = "<span class=\"audit-tag verified\">verified</span>";
+    else if(r.policy_decision === "blocked") tag = "<span class=\"audit-tag blocked\">blocked</span>";
+    return "<div class=\"audit-entry\"><span class=\"ts\">" + r.timestamp + "</span> — <b>" + r.action_type + "</b> · " + r.target + " [" + r.risk_tier + "]" + tag + "</div>";
+  }).join("");
+}
+
+function stepHTML(step, idx){
+  var tier = step.risk_tier;
+  var lines = "";
+
+  lines += "<div class=\"trace-line\"><span class=\"k\">policy</span><span class=\"tier-tag " + tier + "\">" + tier + " risk</span>&nbsp;&nbsp;" + step.policy_decision + "</div>";
+
+  if(step.policy_decision === "blocked"){
+    lines += "<div class=\"trace-line\"><span class=\"k\">gateway</span><span class=\"blocked\">blocked — never reached Tool Gateway</span></div>";
+  } else if(step.gateway_result){
+    lines += "<div class=\"trace-line\"><span class=\"k\">gateway</span><span class=\"ok\">executed</span> — " + step.gateway_result.detail + "</div>";
+  }
+
+  var note = "";
+  if(step.verification){
+    var v = step.verification.verification_status;
+    var cls = v === "mismatch" ? "mismatch" : (v === "verified" ? "verified" : "");
+    lines += "<div class=\"trace-line\"><span class=\"k\">verify</span><span class=\"" + cls + "\">" + v.toUpperCase() + "</span></div>";
+    note = "<div class=\"note" + (v === "mismatch" ? " warn" : "") + "\">" + step.verification.reason + "</div>";
+  }
+
+  return (
+    "<div class=\"step " + tier + "\">" +
+      "<div class=\"step-head\">" +
+        "<span class=\"step-num\">" + String(idx + 1).padStart(2,"0") + "</span>" +
+        "<span class=\"step-name\">" + step.action_type + "</span>" +
+        "<span class=\"step-target\">→ " + step.target + "</span>" +
+      "</div>" +
+      lines +
+      note +
+    "</div>"
+  );
+}
+
+async function runPipeline(){
+  var btn = document.getElementById("runBtn");
+  btn.disabled = true; btn.textContent = "Running";
+  var task = document.getElementById("taskInput").value;
+
+  var res = await fetch(API + "/api/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({task: task})
+  });
+  var data = await res.json();
+
+  var traceEl = document.getElementById("trace");
+  traceEl.innerHTML = "";
+  document.getElementById("traceCount").textContent = data.trace.length + " steps";
+
+  data.trace.forEach(function(step, i){
+    setTimeout(function(){
+      traceEl.insertAdjacentHTML("beforeend", stepHTML(step, i));
+    }, i * 400);
+  });
+
+  setTimeout(async function(){
+    await loadInvoices();
+    await loadAuditLog();
+    btn.disabled = false; btn.textContent = "Run";
+  }, data.trace.length * 400 + 300);
+}
+
+async function resetDemo(){
+  await fetch(API + "/api/reset", {method: "POST"});
+  document.getElementById("trace").innerHTML = "<div class=\"placeholder\">awaiting run — press \"Run\" to evaluate the agent's plan</div>";
+  document.getElementById("traceCount").textContent = "0 steps";
+  await loadInvoices();
+  await loadAuditLog();
+}
+
+loadInvoices();
+loadAuditLog();
+</script>
+</body>
+</html>
