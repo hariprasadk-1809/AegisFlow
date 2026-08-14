@@ -6,7 +6,10 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "aegisflow.db")
+if os.environ.get("VERCEL"):
+    DB_PATH = "/tmp/aegisflow.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), "aegisflow.db")
 
 
 def get_conn():
