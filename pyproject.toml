@@ -1,4 +1,3 @@
-$content = @"
 [project]
 name = "aegisflow"
 version = "0.1.0"
@@ -10,5 +9,3 @@ dependencies = [
 
 [tool.vercel]
 entrypoint = "backend.main:app"
-"@
-[System.IO.File]::WriteAllText("$PWD\pyproject.toml", $content)
