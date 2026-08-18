@@ -31,7 +31,6 @@ By default the Planner uses a deterministic fallback (so the demo never breaks o
 stage due to network/API issues). To use a real Claude call for planning instead:
 
 ```bash
-export ANTHROPIC_API_KEY=your_key_here
 uvicorn backend.main:app --reload --port 8000
 ```
 
