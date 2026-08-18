@@ -6,7 +6,8 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "aegisflow.db")
+import tempfile
+DB_PATH = os.path.join(tempfile.gettempdir(), "aegisflow.db")
 
 
 def get_conn():
