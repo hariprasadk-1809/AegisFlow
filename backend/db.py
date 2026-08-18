@@ -6,10 +6,7 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 
-if os.environ.get("VERCEL"):
-    DB_PATH = "/tmp/aegisflow.db"
-else:
-    DB_PATH = os.path.join(os.path.dirname(__file__), "aegisflow.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "aegisflow.db")
 
 
 def get_conn():
@@ -45,9 +42,14 @@ def init_db(reset=False):
             target TEXT NOT NULL,
             risk_tier TEXT NOT NULL,
             policy_decision TEXT NOT NULL,
+            rule_id TEXT,
+            reason TEXT,
             agent_claimed TEXT,
             verified_result TEXT,
             verification_status TEXT,
+            approval_status TEXT,
+            approved_by TEXT,
+            approval_timestamp TEXT,
             details TEXT
         )
     """)
@@ -72,17 +74,45 @@ def init_db(reset=False):
 
 
 def log_audit(action_type, target, risk_tier, policy_decision,
-               agent_claimed=None, verified_result=None,
-               verification_status=None, details=None):
+               rule_id=None, reason=None, agent_claimed=None, verified_result=None,
+               verification_status=None, approval_status=None, approved_by=None,
+               approval_timestamp=None, details=None):
     conn = get_conn()
-    conn.execute(
+    cur = conn.execute(
         """INSERT INTO audit_log
            (timestamp, action_type, target, risk_tier, policy_decision,
-            agent_claimed, verified_result, verification_status, details)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            rule_id, reason, agent_claimed, verified_result, verification_status,
+            approval_status, approved_by, approval_timestamp, details)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (datetime.now().isoformat(timespec="seconds"), action_type, target,
-         risk_tier, policy_decision, agent_claimed, verified_result,
-         verification_status, details),
+         risk_tier, policy_decision, rule_id, reason, agent_claimed, verified_result,
+         verification_status, approval_status, approved_by, approval_timestamp, details),
+    )
+    conn.commit()
+    audit_id = cur.lastrowid
+    conn.close()
+    return audit_id
+
+
+def update_audit_approval(audit_id, approval_status, approved_by,
+                            agent_claimed=None, verified_result=None,
+                            verification_status=None, details=None):
+    """
+    Called after a human decides on a 'needs_approval' step. Updates the
+    SAME audit row created when the action was first held, rather than
+    creating a second row — so the audit trail reads as one continuous
+    decision, not two disconnected log lines.
+    """
+    conn = get_conn()
+    conn.execute(
+        """UPDATE audit_log SET approval_status = ?, approved_by = ?,
+           approval_timestamp = ?, agent_claimed = COALESCE(?, agent_claimed),
+           verified_result = COALESCE(?, verified_result),
+           verification_status = COALESCE(?, verification_status),
+           details = COALESCE(?, details)
+           WHERE id = ?""",
+        (approval_status, approved_by, datetime.now().isoformat(timespec="seconds"),
+         agent_claimed, verified_result, verification_status, details, audit_id),
     )
     conn.commit()
     conn.close()

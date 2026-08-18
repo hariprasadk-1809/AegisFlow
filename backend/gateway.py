@@ -54,9 +54,33 @@ def waive_late_fee(invoice_id: int) -> dict:
     return {"claimed_success": True, "detail": "Late fee waived"}
 
 
+def update_invoice_status(invoice_id: int, new_status: str = "disputed") -> dict:
+    """
+    Medium-risk action: changes the invoice's status field in the system
+    of record. This only ever runs after a human has approved it — the
+    orchestrator holds 'needs_approval' actions until /api/approve is
+    called, so unlike send_reminder_email/waive_late_fee this function
+    is reached via the approval path, not automatically.
+    """
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM invoices WHERE id = ?", (invoice_id,)).fetchone()
+    if not row:
+        conn.close()
+        return {"claimed_success": False, "detail": "invoice not found"}
+
+    conn.execute("UPDATE invoices SET status = ? WHERE id = ?", (new_status, invoice_id))
+    conn.commit()
+    conn.close()
+    return {
+        "claimed_success": True,
+        "detail": f"{row['customer_name']}'s invoice status changed to '{new_status}'",
+    }
+
+
 TOOL_MAP = {
     "send_reminder_email": send_reminder_email,
     "waive_late_fee": waive_late_fee,
+    "update_invoice_status": update_invoice_status,
 }
 
 

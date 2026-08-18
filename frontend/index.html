@@ -63,17 +63,19 @@
     padding:12px 0; border-bottom:1px solid var(--line); letter-spacing:0.3px;
     display:flex; gap:6px; flex-wrap:wrap;
   }
-  .pipeline-strip .seg{color:var(--ink);}
+  .pipeline-strip .seg{color:var(--ink); transition:color 0.2s, font-weight 0.2s;}
+  .pipeline-strip .seg.active{color:var(--amber); font-weight:600;}
   .pipeline-strip .sep{color:var(--ink-faint);}
 
   /* ── Task control ───────────────────────── */
   .task-row{
-    display:flex; gap:0; margin:24px 0 32px; border:2px solid var(--ink);
+    display:flex; gap:0; margin:24px 0 12px; border:2px solid var(--ink);
   }
   .task-row input{
     flex:1; background:var(--card); border:none; color:var(--ink);
     padding:14px 16px; font-size:14px; font-family:var(--body); outline:none;
   }
+  .task-row input:disabled{color:var(--ink-faint); background:var(--line-soft);}
   .task-row button{
     font-family:var(--mono); font-weight:600; font-size:12px; letter-spacing:0.5px;
     text-transform:uppercase; cursor:pointer; border:none; padding:0 24px;
@@ -82,12 +84,33 @@
   }
   .task-row button:hover{background:var(--amber);}
   .task-row button:disabled{background:var(--ink-faint); cursor:not-allowed;}
+  .task-hint{
+    font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); margin-bottom:16px;
+  }
   .reset-link{
     font-family:var(--mono); font-size:11px; color:var(--ink-faint);
     background:none; border:none; cursor:pointer; text-decoration:underline;
-    padding:0; margin-top:8px; display:inline-block;
+    padding:0; margin-top:0; display:inline-block; margin-bottom:24px;
   }
   .reset-link:hover{color:var(--ink);}
+
+  /* ── Scoreboard ─────────────────────────── */
+  .scoreboard{
+    display:flex; gap:0; border:2px solid var(--ink); margin-bottom:32px;
+    flex-wrap:wrap;
+  }
+  .score-cell{
+    flex:1; min-width:110px; padding:14px 16px; border-left:1px solid var(--line);
+  }
+  .score-cell:first-child{border-left:none;}
+  .score-num{font-family:var(--disp); font-weight:700; font-size:24px; line-height:1;}
+  .score-label{
+    font-family:var(--mono); font-size:10px; text-transform:uppercase;
+    letter-spacing:0.5px; color:var(--ink-faint); margin-top:4px;
+  }
+  .score-cell.green .score-num{color:var(--green);}
+  .score-cell.amber .score-num{color:var(--amber);}
+  .score-cell.red .score-num{color:var(--red);}
 
   /* ── Section labels ─────────────────────── */
   .section-label{
@@ -134,6 +157,11 @@
   .trace-line .blocked{color:var(--red); font-weight:600;}
   .trace-line .mismatch{color:var(--red); font-weight:700;}
   .trace-line .verified{color:var(--green); font-weight:600;}
+  .trace-line .pending{color:var(--amber); font-weight:600;}
+
+  .rule-note{
+    font-size:12px; color:var(--ink-faint); margin-top:4px; font-family:var(--mono);
+  }
 
   .note{
     font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6; max-width:520px;
@@ -141,6 +169,26 @@
   .note.warn{
     color:var(--red); background:var(--red-bg); padding:8px 12px; border-left:2px solid var(--red);
   }
+  .note.pending{
+    color:var(--amber); background:var(--amber-bg); padding:8px 12px; border-left:2px solid var(--amber);
+  }
+
+  .approval-row{ margin-top:10px; display:flex; gap:8px; align-items:center; }
+  .approval-row button{
+    font-family:var(--mono); font-weight:600; font-size:11px; letter-spacing:0.4px;
+    text-transform:uppercase; cursor:pointer; padding:7px 16px; border:1.5px solid var(--ink);
+    background:var(--card); color:var(--ink);
+  }
+  .approval-row button.approve{border-color:var(--green); color:var(--green);}
+  .approval-row button.approve:hover{background:var(--green); color:var(--card);}
+  .approval-row button.reject{border-color:var(--red); color:var(--red);}
+  .approval-row button.reject:hover{background:var(--red); color:var(--card);}
+  .approval-row button:disabled{opacity:0.4; cursor:not-allowed;}
+  .approval-decided{
+    font-family:var(--mono); font-size:11.5px; font-weight:600; margin-top:8px;
+  }
+  .approval-decided.approved{color:var(--green);}
+  .approval-decided.rejected{color:var(--red);}
 
   .placeholder{
     font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
@@ -179,6 +227,10 @@
   .audit-tag.mismatch{color:var(--red); background:var(--red-bg);}
   .audit-tag.verified{color:var(--green); background:var(--green-bg);}
   .audit-tag.blocked{color:var(--red); background:var(--red-bg);}
+  .audit-tag.pending{color:var(--amber); background:var(--amber-bg);}
+  .audit-tag.approved{color:var(--green); background:var(--green-bg);}
+  .audit-tag.rejected{color:var(--red); background:var(--red-bg);}
+  .audit-approver{color:var(--ink-faint); font-size:10px;}
 
   .panel-gap{margin-top:36px;}
 </style>
@@ -197,20 +249,29 @@
     </div>
   </div>
 
-  <div class="pipeline-strip">
-    <span class="seg">Intent</span><span class="sep">→</span>
-    <span class="seg">Planner</span><span class="sep">→</span>
-    <span class="seg">Policy Engine</span><span class="sep">→</span>
-    <span class="seg">Tool Gateway</span><span class="sep">→</span>
-    <span class="seg">Verification</span><span class="sep">→</span>
-    <span class="seg">Audit Log</span>
+  <div class="pipeline-strip" id="pipelineStrip">
+    <span class="seg" data-stage="intent">Intent</span><span class="sep">→</span>
+    <span class="seg" data-stage="planner">Planner</span><span class="sep">→</span>
+    <span class="seg" data-stage="policy">Policy Engine</span><span class="sep">→</span>
+    <span class="seg" data-stage="gateway">Tool Gateway</span><span class="sep">→</span>
+    <span class="seg" data-stage="verify">Verification</span><span class="sep">→</span>
+    <span class="seg" data-stage="audit">Audit Log</span>
   </div>
 
   <div class="task-row">
-    <input id="taskInput" value="Chase all overdue invoices and waive fees where reasonable" />
+    <input id="taskInput" value="Chase all overdue invoices and waive fees where reasonable" disabled />
     <button onclick="runPipeline()" id="runBtn">Run</button>
   </div>
-  <button class="reset-link" onclick="resetDemo()" style="margin-top:-24px; margin-bottom:24px;">reset demo data</button>
+  <div class="task-hint">fixed scenario for demo reliability — set ANTHROPIC_API_KEY server-side to enable live-LLM planning on custom tasks (see README)</div>
+  <button class="reset-link" onclick="resetDemo()">reset demo data</button>
+
+  <div class="scoreboard" id="scoreboard" style="display:none;">
+    <div class="score-cell"><div class="score-num" id="scEvaluated">0</div><div class="score-label">Evaluated</div></div>
+    <div class="score-cell green"><div class="score-num" id="scVerified">0</div><div class="score-label">Verified</div></div>
+    <div class="score-cell red"><div class="score-num" id="scMismatch">0</div><div class="score-label">Mismatch Caught</div></div>
+    <div class="score-cell red"><div class="score-num" id="scBlocked">0</div><div class="score-label">Blocked</div></div>
+    <div class="score-cell amber"><div class="score-num" id="scPending">0</div><div class="score-label">Pending Approval</div></div>
+  </div>
 
   <div class="layout">
     <div>
@@ -272,13 +333,38 @@ async function loadAuditLog(){
     el.innerHTML = "<div class=\"placeholder\" style=\"padding:24px 0;\">no entries yet</div>";
     return;
   }
-  el.innerHTML = rows.slice(0,12).map(function(r){
+  el.innerHTML = rows.slice(0,14).map(function(r){
     var tag = "";
     if(r.verification_status === "mismatch") tag = "<span class=\"audit-tag mismatch\">mismatch</span>";
     else if(r.verification_status === "verified") tag = "<span class=\"audit-tag verified\">verified</span>";
     else if(r.policy_decision === "blocked") tag = "<span class=\"audit-tag blocked\">blocked</span>";
-    return "<div class=\"audit-entry\"><span class=\"ts\">" + r.timestamp + "</span> — <b>" + r.action_type + "</b> · " + r.target + " [" + r.risk_tier + "]" + tag + "</div>";
+    else if(r.approval_status === "pending") tag = "<span class=\"audit-tag pending\">pending approval</span>";
+    else if(r.approval_status === "approved") tag = "<span class=\"audit-tag approved\">approved</span>";
+    else if(r.approval_status === "rejected") tag = "<span class=\"audit-tag rejected\">rejected</span>";
+    var approver = r.approved_by ? " <span class=\"audit-approver\">by " + r.approved_by + "</span>" : "";
+    return "<div class=\"audit-entry\"><span class=\"ts\">" + r.timestamp + "</span> — <b>" + r.action_type + "</b> · " + r.target + " [" + r.risk_tier + "]" + tag + approver + "</div>";
   }).join("");
+}
+
+function updateScoreboard(trace){
+  var evaluated = trace.length;
+  var verified = trace.filter(function(s){ return s.verification && s.verification.verification_status === "verified"; }).length;
+  var mismatch = trace.filter(function(s){ return s.verification && s.verification.verification_status === "mismatch"; }).length;
+  var blocked = trace.filter(function(s){ return s.policy_decision === "blocked"; }).length;
+  var pending = trace.filter(function(s){ return s.awaiting_approval; }).length;
+
+  document.getElementById("scoreboard").style.display = "flex";
+  document.getElementById("scEvaluated").textContent = evaluated;
+  document.getElementById("scVerified").textContent = verified;
+  document.getElementById("scMismatch").textContent = mismatch;
+  document.getElementById("scBlocked").textContent = blocked;
+  document.getElementById("scPending").textContent = pending;
+}
+
+function highlightStage(stage){
+  document.querySelectorAll("#pipelineStrip .seg").forEach(function(el){
+    el.classList.toggle("active", el.dataset.stage === stage);
+  });
 }
 
 function stepHTML(step, idx){
@@ -286,9 +372,14 @@ function stepHTML(step, idx){
   var lines = "";
 
   lines += "<div class=\"trace-line\"><span class=\"k\">policy</span><span class=\"tier-tag " + tier + "\">" + tier + " risk</span>&nbsp;&nbsp;" + step.policy_decision + "</div>";
+  if(step.rule_id){
+    lines += "<div class=\"rule-note\">" + step.rule_id + " — " + step.reason + "</div>";
+  }
 
   if(step.policy_decision === "blocked"){
     lines += "<div class=\"trace-line\"><span class=\"k\">gateway</span><span class=\"blocked\">blocked — never reached Tool Gateway</span></div>";
+  } else if(step.awaiting_approval){
+    lines += "<div class=\"trace-line\"><span class=\"k\">gateway</span><span class=\"pending\">held — awaiting human approval</span></div>";
   } else if(step.gateway_result){
     lines += "<div class=\"trace-line\"><span class=\"k\">gateway</span><span class=\"ok\">executed</span> — " + step.gateway_result.detail + "</div>";
   }
@@ -301,8 +392,19 @@ function stepHTML(step, idx){
     note = "<div class=\"note" + (v === "mismatch" ? " warn" : "") + "\">" + step.verification.reason + "</div>";
   }
 
+  var approvalBlock = "";
+  if(step.awaiting_approval){
+    approvalBlock =
+      "<div class=\"note pending\">This action changes system-of-record state — it will not run until a human approves it.</div>" +
+      "<div class=\"approval-row\" id=\"approval-" + idx + "\">" +
+        "<button class=\"approve\" onclick=\"decideApproval(" + idx + ", true)\">Approve</button>" +
+        "<button class=\"reject\" onclick=\"decideApproval(" + idx + ", false)\">Reject</button>" +
+      "</div>" +
+      "<div id=\"approval-result-" + idx + "\"></div>";
+  }
+
   return (
-    "<div class=\"step " + tier + "\">" +
+    "<div class=\"step " + tier + "\" data-idx=\"" + idx + "\">" +
       "<div class=\"step-head\">" +
         "<span class=\"step-num\">" + String(idx + 1).padStart(2,"0") + "</span>" +
         "<span class=\"step-name\">" + step.action_type + "</span>" +
@@ -310,14 +412,22 @@ function stepHTML(step, idx){
       "</div>" +
       lines +
       note +
+      approvalBlock +
     "</div>"
   );
 }
+
+// Keep the last trace in memory so approve/reject buttons know what to POST.
+var lastTrace = [];
 
 async function runPipeline(){
   var btn = document.getElementById("runBtn");
   btn.disabled = true; btn.textContent = "Running";
   var task = document.getElementById("taskInput").value;
+
+  highlightStage("intent");
+  await new Promise(function(r){ setTimeout(r, 250); });
+  highlightStage("planner");
 
   var res = await fetch(API + "/api/run", {
     method: "POST",
@@ -325,28 +435,78 @@ async function runPipeline(){
     body: JSON.stringify({task: task})
   });
   var data = await res.json();
+  lastTrace = data.trace;
+
+  highlightStage("policy");
 
   var traceEl = document.getElementById("trace");
   traceEl.innerHTML = "";
   document.getElementById("traceCount").textContent = data.trace.length + " steps";
+  updateScoreboard(data.trace);
 
   data.trace.forEach(function(step, i){
     setTimeout(function(){
       traceEl.insertAdjacentHTML("beforeend", stepHTML(step, i));
+      if(step.policy_decision === "blocked"){
+        highlightStage("policy");
+      } else if(step.awaiting_approval){
+        highlightStage("gateway");
+      } else if(step.verification){
+        highlightStage("verify");
+      } else {
+        highlightStage("gateway");
+      }
     }, i * 400);
   });
 
   setTimeout(async function(){
+    highlightStage("audit");
     await loadInvoices();
     await loadAuditLog();
     btn.disabled = false; btn.textContent = "Run";
+    setTimeout(function(){ highlightStage(null); }, 1200);
   }, data.trace.length * 400 + 300);
+}
+
+async function decideApproval(idx, approved){
+  var step = lastTrace[idx];
+  if(!step) return;
+
+  var row = document.getElementById("approval-" + idx);
+  row.querySelectorAll("button").forEach(function(b){ b.disabled = true; });
+
+  var res = await fetch(API + "/api/approve", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      action_type: step.action_type,
+      invoice_id: step.invoice_id,
+      target: step.target,
+      audit_id: step.audit_id,
+      approved: approved,
+      approved_by: "demo-user"
+    })
+  });
+  var data = await res.json();
+
+  var resultEl = document.getElementById("approval-result-" + idx);
+  if(data.status === "approved"){
+    resultEl.innerHTML = "<div class=\"approval-decided approved\">✓ Approved — " + (data.gateway_result ? data.gateway_result.detail : "executed") + "</div>";
+  } else {
+    resultEl.innerHTML = "<div class=\"approval-decided rejected\">✗ Rejected — action did not run</div>";
+  }
+
+  await loadInvoices();
+  await loadAuditLog();
 }
 
 async function resetDemo(){
   await fetch(API + "/api/reset", {method: "POST"});
   document.getElementById("trace").innerHTML = "<div class=\"placeholder\">awaiting run — press \"Run\" to evaluate the agent's plan</div>";
   document.getElementById("traceCount").textContent = "0 steps";
+  document.getElementById("scoreboard").style.display = "none";
+  highlightStage(null);
+  lastTrace = [];
   await loadInvoices();
   await loadAuditLog();
 }

@@ -33,8 +33,12 @@ def _fallback_plan(task: str) -> list[dict]:
     for row in overdue:
         steps.append({"action_type": "send_reminder_email", "invoice_id": row["id"]})
 
-    # Deliberately also propose a high-risk action so the Policy Engine
-    # has something to block in the demo.
+    # Deliberately also propose a medium-risk action (needs human approval)
+    # and a high-risk action (blocked outright), so the demo exercises
+    # all three policy tiers, not just auto-approve and block.
+    if len(overdue) >= 2:
+        steps.append({"action_type": "update_invoice_status", "invoice_id": overdue[1]["id"]})
+
     if overdue:
         steps.append({"action_type": "waive_late_fee", "invoice_id": overdue[-1]["id"]})
 
@@ -50,8 +54,9 @@ def _llm_plan(task: str) -> list[dict]:
 
     prompt = f"""You are a planning agent. Given this task and this list of invoices,
 output ONLY a JSON array of steps. Each step must be an object with
-"action_type" (either "send_reminder_email" or "waive_late_fee") and
-"invoice_id" (integer). No prose, no markdown fences, JSON array only.
+"action_type" (one of "send_reminder_email", "update_invoice_status", or
+"waive_late_fee") and "invoice_id" (integer). No prose, no markdown fences,
+JSON array only.
 
 Task: {task}
 Invoices: {json.dumps(invoices)}
